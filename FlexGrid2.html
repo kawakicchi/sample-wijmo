@@ -1,0 +1,116 @@
+<html>
+<head>
+
+<link href="https://cdn.grapecity.com/wijmo/5.latest/styles/wijmo.min.css" rel="stylesheet"/>
+<link href="http://cdn.wijmo.com/5.latest/styles/themes/wijmo.theme.modern.min.css" rel="stylesheet" />
+
+<script src="https://cdn.grapecity.com/wijmo/5.latest/controls/wijmo.min.js"></script>
+<script src="http://cdn.wijmo.com/5.latest/controls/wijmo.grid.min.js"></script>
+<script>
+    wijmo.setLicenseKey('your license key goes here...');
+</script>
+
+<script>
+function test() {
+//alert(grid.getCellData(0, 0));
+//alert(grid.getCellData(1, 0));
+}
+var grid;
+var dataSize;
+onload = function() {
+    var countries = 'US,Germany,UK,Japan,Italy,Greece'.split(','),
+
+    data = [];
+    for (var i = 0; i < countries.length; i++) {
+      for (var j = 0; j < 30; j++) {
+        data.push({
+            check     : false
+          , country   : countries[i]
+          , downloads : Math.round(Math.random() * 20000)
+          , sales     : Math.random() * 10000
+          , expenses  : Math.random() * 5000
+        });
+      }
+    }
+    dataSize = data.length;
+
+    var view = new wijmo.collections.CollectionView(data);
+    view.groupDescriptions.push(new wijmo.collections.PropertyGroupDescription('country'));
+
+    grid = new wijmo.grid.FlexGrid('#grid', {
+        autoGenerateColumns  : false
+      , allowDragging        : wijmo.grid.AllowDragging.None
+      , selectionMode        : wijmo.grid.SelectionMode.RowRange
+      , headersVisibility    : wijmo.grid.HeadersVisibility.Column
+      , showGroups           : false
+      , itemsSource          : view
+//      , virtualizationThreshold : 100
+      , columns: [
+          { binding: 'check',     header: '',          isReadOnly: false, dataType: wijmo.DataType.Boolean }
+        , { binding: 'country',   header: 'Country',   isReadOnly: true }
+        , { binding: 'sales',     header: 'Sales',     isReadOnly: true }
+        , { binding: 'expenses',  header: 'Expenses',  isReadOnly: true }
+        , { binding: 'downloads', header: 'Downloads', isReadOnly: true, format: 'n0' }
+        ]
+     , cellEditEnding : function(sender, e) {
+           if (e.range.topRow != e.row) { // rangeŒø‚¢‚Ä‚È‚¢
+               console.log('cancel['+e.row+':'+e.col+']');
+               e.cancel = true;
+           }
+       }
+     , cellEditEnded : function(sender, e) {
+           if (e.range.topRow == e.row) { // rangeŒø‚¢‚Ä‚È‚¢
+               var key1 = grid.getCellData(e.row, 1); // country
+               var val = grid.getCellData(e.row, e.col);
+               var row = e.row + 1;
+               while (row < dataSize) {
+                   var key2 = grid.getCellData(row, 1); // country
+                   if (key2 != key1) break;
+                   grid.setCellData(row, e.col, val);
+                   row++;
+               }
+           }
+       }
+     , itemFormatter : function(panel, r, c, cell) {
+           if (0 == c) {
+               var range = getGroupRange(grid, r, 0, 0);
+               if (range.topRow == r) {
+               } else {
+                   cell.innerHTML = "";
+               }
+           } else if (1 == c) {
+               var range = getGroupRange(grid, r, 0, 0);
+               if (range.topRow == r) {
+                   cell.innerHTML = grid.getCellData(r,c);
+               } else {
+                   cell.innerHTML = "";
+               }
+           }
+       }
+    });
+//    grid.select(getGroupRange(grid, 0, 0, 4));
+}
+
+function getGroupRange(grid, row, leftCol, rightCol) {
+    var key1      = grid.getCellData(row, 1); // country
+    var topRow    = row;
+    var bottomRow = row;
+    while (1 <= topRow) {
+       var key2 = grid.getCellData(topRow - 1, 1); // country
+       if (key2 != key1) break;
+       topRow --;
+    }
+    while (dataSize > bottomRow + 1) {
+       var key2 = grid.getCellData(bottomRow + 1, 1); // country
+       if (key2 != key1) break;
+       bottomRow ++;
+    }
+    return new wijmo.grid.CellRange(topRow, leftCol, bottomRow, rightCol);
+}
+</script>
+</head>
+<body>
+    <input type="button" value="test" onclick="test();" />
+    <div id="grid" style="height: 200px"></div>
+</body>
+</html>
